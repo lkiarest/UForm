@@ -1,0 +1,21 @@
+{
+  "name": "emap-form-xtype",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup src/index.js --format umd --name uform --output dist/index.js"
+  },
+  "repository": "git@github.com:wisedu/emap-form-xtype.git",
+  "author": "qintianxiang <txqin@wisedu.com>",
+  "license": "MIT",
+  "dependencies": {
+    "tapable": "^0.2.8"
+  },
+  "devDependencies": {
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-latest": "^6.24.1",
+    "rollup-plugin-babel": "^2.7.1",
+    "rollup-plugin-commonjs": "^8.1.0",
+    "rollup-plugin-node-resolve": "^3.0.0"
+  }
+}
