@@ -1,7 +1,4 @@
 /**
- * schema of form definition
- */
-/**
  * prepare form schema
  */
 
@@ -14,7 +11,7 @@ class SchemaPlugin {
 
             const schemaType = typeof schema
             if (schemaType === 'object') {
-                return next(null, {obj: schema})
+                return next(null, schema)
             } else if (schemaType === 'string') {
                 setTimeout(function() {
                     return next(null, {async: schema})

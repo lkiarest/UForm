@@ -4,13 +4,13 @@
  */
 import Tapable from 'tapable'
 
-class IForm extends Tapable{
-    constructor () {
-        super()
-    }
+class IForm extends Tapable {
+    // constructor () {
+    //     super()
+    // }
 
     init () {}
-    setValue () {}
+    setValue (val) {}
     getValue () {}
     validate () {}
     render () {}

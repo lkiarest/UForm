@@ -4,10 +4,19 @@
 import IForm from './IForm'
 
 class FormControl extends IForm {
-    constructor (type, name) {
+    constructor (schema) {
         super()
-        this.type = type
-        this.name = name
+
+        if (!schema) {
+            throw Error('need schema info to create a form control')
+        }
+
+        this.schema = schema
+
+        this.type = schema.type
+        this.name = schema.name
+        this.label = schema.label || ''
+        this.elem = null
     }
 
     getType () {
@@ -22,8 +31,20 @@ class FormControl extends IForm {
         return this.value
     }
 
-    setValue () {
-        return this.value
+    setValue (value) {
+        this.value = value
+    }
+
+    getElement () {
+        return this.elem
+    }
+
+    setElement (elem) {
+        this.elem = elem
+    }
+
+    getSchema () {
+        return this.schema
     }
 }
 

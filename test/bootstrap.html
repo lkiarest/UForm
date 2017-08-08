@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bootstrap Form</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <style>
+        #form {
+            margin-top: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div id='form'></div>
+    </div>
+
+<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+<script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src='../dist/bootstrap/index.js'></script>
+<script>
+    (function() {
+        let f1 = new UForm('#form', {
+            schema: [
+                {
+                    name: 'schoolName',
+                    type: 'input',
+                    label: '学校名称',
+                    placeholder: '请输入学校名称'
+                }
+            ]
+        })
+
+        f1.setValue({
+            schoolName: 'github'
+        })
+    })()
+</script>
+</body>
+</html>

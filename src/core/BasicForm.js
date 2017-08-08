@@ -2,7 +2,8 @@
  * basic class of all kinds of forms
  */
 import IForm from './IForm'
-import FormControl from './FormControl'
+import ControlRegister from './ControlRegister'
+// import UiPlugin from '../plugins/UiPlugin'
 import SchemaPlugin from '../plugins/SchemaPlugin'
 import RenderPlugin from '../plugins/RenderPlugin'
 
@@ -14,7 +15,11 @@ class BasicForm extends IForm {
             throw new Error('Form should be created within a container !')
         }
 
-        this.schema = null
+        if (!options) {
+            throw new Error('no options specified !')
+        }
+
+        // this.schemas = null
 
         // all controls
         this.controls = []
@@ -33,8 +38,17 @@ class BasicForm extends IForm {
      * register default plugins and initialize
      */
     init () {
+        this.controlReg = new ControlRegister()
+
         // register plugins
-        this.apply(new SchemaPlugin(), new RenderPlugin())
+        const uiLibPlugin = BasicForm.UiLib
+        this.apply(new uiLibPlugin(), new SchemaPlugin(), new RenderPlugin())
+
+        /** register control types */
+        const controlReg = this.controlReg
+        this.applyPlugins('register-controls', function(type, control) {
+            controlReg.register(type, control)
+        })
 
         /** create and render form view - without data bind */
         this.create()
@@ -46,37 +60,65 @@ class BasicForm extends IForm {
     create () {
         const self = this
 
+        self.applyPlugins('before-create', self)
+
         self.applyPluginsAsyncWaterfall('schema', self.options.schema, function(err, value) {
-            console.log('schema', value)
             if (err) {
                 console.error('get schema failed ', err)
                 return
             }
 
-            self.schema = value
-            this.applyPlugins('schema-loaded', value)
+            self.applyPlugins('schema-loaded', value)
 
-            self.render()
+            if (value && value.length > 0) { // build from schema list
+                self.buildControls(value)
+                self.render()
+            }
         })
     }
 
-    addControls (control) {
-        if (control instanceof FormControl) {
-            this.controls.push(control)
-        }
+    /**
+     * build controls list from schema
+     */
+    buildControls (schemaList) {
+        const controlReg = this.controlReg
+
+        schemaList.forEach(schema => {
+            const type = schema.type
+            let controlCls = controlReg.getControl(type)
+
+            if (!controlCls) {
+                console.error('')
+            } else {
+                this.addControl(new controlCls(schema))
+            }
+        })
+    }
+
+    addControl (control) {
+        this.controls.push(control)
     }
 
     /**
      * render form controls
      */
     render () {
-        this.applyPlugins('before-render', this.options)
+        const container = this.container,
+            controls = this.controls
 
-        this.controls.forEach(control => {
-            this.applyPlugins('render-control', this.options, control)
+        this.applyPlugins('before-render-form', container)
+        const formBody = this.applyPluginsWaterfall('form-wrapper', document.createElement('form'))
+
+        controls.forEach(control => {
+            const controlPanel = this.applyPluginsWaterfall('before-render-control', null, control) || document.createElement('div')
+            formBody.appendChild(controlPanel)
+            // this.applyPlugins('render-control', control, controlPanel)
+            control.render(controlPanel)
+            this.applyPlugins('after-render-control', formBody, control)
         })
 
-        this.applyPlugins('after-render', this.options)
+        container.appendChild(formBody)
+        this.applyPlugins('after-render-form', container)
     }
 
     setValue (value) {
