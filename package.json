@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev:bs": "cross-env UILIB=bootstrap rollup -c -w & npm run test:bs",
+    "dev:bs": "cross-env UILIB=bootstrap rollup -c -w",
     "build:bs": "cross-env UILIB=bootstrap rollup -c",
     "test:bs": "static-server . -p 3000 -i test/bootstrap.html"
   },

@@ -2,24 +2,24 @@
  * basic class of all kinds of forms
  */
 import IForm from './IForm'
+import FormControl from './FormControl'
 import ControlRegister from './ControlRegister'
-// import UiPlugin from '../plugins/UiPlugin'
 import SchemaPlugin from '../plugins/SchemaPlugin'
 import RenderPlugin from '../plugins/RenderPlugin'
+
+const controlReg = new ControlRegister()
 
 class BasicForm extends IForm {
     constructor (container, options) {
         super()
 
         if (!container) {
-            throw new Error('Form should be created within a container !')
+            throw new Error('form should be created within a container !')
         }
 
         if (!options) {
-            throw new Error('no options specified !')
+            throw new Error('no form options specified !')
         }
-
-        // this.schemas = null
 
         // all controls
         this.controls = []
@@ -38,17 +38,14 @@ class BasicForm extends IForm {
      * register default plugins and initialize
      */
     init () {
-        this.controlReg = new ControlRegister()
+        // register default plugins
+        this.apply(BasicForm.UiLibPlugin, new SchemaPlugin(), new RenderPlugin())
 
-        // register plugins
-        const uiLibPlugin = BasicForm.UiLib
-        this.apply(new uiLibPlugin(), new SchemaPlugin(), new RenderPlugin())
-
-        /** register control types */
-        const controlReg = this.controlReg
-        this.applyPlugins('register-controls', function(type, control) {
-            controlReg.register(type, control)
-        })
+        // user defined plugins
+        const plugins = this.options.plugins
+        if (plugins && plugins.length > 0) {
+            this.apply.apply(this, plugins)
+        }
 
         /** create and render form view - without data bind */
         this.create()
@@ -81,8 +78,6 @@ class BasicForm extends IForm {
      * build controls list from schema
      */
     buildControls (schemaList) {
-        const controlReg = this.controlReg
-
         schemaList.forEach(schema => {
             const type = schema.type
             let controlCls = controlReg.getControl(type)
@@ -156,5 +151,30 @@ class BasicForm extends IForm {
         this.applyPlugins('after-destroy')
     }
 }
+
+/**
+ * register control types
+ * @param  {String|Array|Object} type    support register by an array, an object or by type/entity
+ */
+BasicForm.registerControl = function(type, control) {
+    if (Array.isArray(type)) { // register controls as a list
+        type.forEach(item => {
+            item && BasicForm.registerControl(item.type, item.control)
+        })
+
+        return
+    } else if (typeof type === 'object') {
+        BasicForm.registerControl(Object.keys(type).map(t => ({
+            type: t,
+            control: type[t]
+        })))
+
+        return
+    }
+
+    controlReg.register(type, control)
+}
+
+BasicForm.Control = FormControl
 
 export default BasicForm

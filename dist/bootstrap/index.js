@@ -676,7 +676,8 @@ var RenderPlugin = function () {
 /**
  * basic class of all kinds of forms
  */
-// import UiPlugin from '../plugins/UiPlugin'
+var controlReg = new ControlRegister();
+
 var BasicForm = function (_IForm) {
     inherits(BasicForm, _IForm);
 
@@ -686,14 +687,12 @@ var BasicForm = function (_IForm) {
         var _this = possibleConstructorReturn(this, (BasicForm.__proto__ || Object.getPrototypeOf(BasicForm)).call(this));
 
         if (!container) {
-            throw new Error('Form should be created within a container !');
+            throw new Error('form should be created within a container !');
         }
 
         if (!options) {
-            throw new Error('no options specified !');
+            throw new Error('no form options specified !');
         }
-
-        // this.schemas = null
 
         // all controls
         _this.controls = [];
@@ -718,17 +717,14 @@ var BasicForm = function (_IForm) {
     createClass(BasicForm, [{
         key: 'init',
         value: function init() {
-            this.controlReg = new ControlRegister();
+            // register default plugins
+            this.apply(BasicForm.UiLibPlugin, new SchemaPlugin(), new RenderPlugin());
 
-            // register plugins
-            var uiLibPlugin = BasicForm.UiLib;
-            this.apply(new uiLibPlugin(), new SchemaPlugin(), new RenderPlugin());
-
-            /** register control types */
-            var controlReg = this.controlReg;
-            this.applyPlugins('register-controls', function (type, control) {
-                controlReg.register(type, control);
-            });
+            // user defined plugins
+            var plugins = this.options.plugins;
+            if (plugins && plugins.length > 0) {
+                this.apply.apply(this, plugins);
+            }
 
             /** create and render form view - without data bind */
             this.create();
@@ -769,8 +765,6 @@ var BasicForm = function (_IForm) {
         key: 'buildControls',
         value: function buildControls(schemaList) {
             var _this2 = this;
-
-            var controlReg = this.controlReg;
 
             schemaList.forEach(function (schema) {
                 var type = schema.type;
@@ -858,6 +852,36 @@ var BasicForm = function (_IForm) {
 }(IForm);
 
 /**
+ * register control types
+ * @param  {String|Array|Object} type    support register by an array, an object or by type/entity
+ */
+
+
+BasicForm.registerControl = function (type, control) {
+    if (Array.isArray(type)) {
+        // register controls as a list
+        type.forEach(function (item) {
+            item && BasicForm.registerControl(item.type, item.control);
+        });
+
+        return;
+    } else if ((typeof type === 'undefined' ? 'undefined' : _typeof(type)) === 'object') {
+        BasicForm.registerControl(Object.keys(type).map(function (t) {
+            return {
+                type: t,
+                control: type[t]
+            };
+        }));
+
+        return;
+    }
+
+    controlReg.register(type, control);
+};
+
+BasicForm.Control = FormControl;
+
+/**
  * basic class of all form controls
  */
 var FormControl$2 = function (_IForm) {
@@ -935,12 +959,12 @@ var Input = function (_FormControl) {
     createClass(Input, [{
         key: 'render',
         value: function render(panel) {
-            var label = document.createElement('label');
-            label.innerText = this.label;
-
             var dom = document.createElement('input');
             dom.className = 'form-control';
             dom.placeholder = this.placeholder;
+
+            var label = document.createElement('label');
+            label.innerText = this.label;
 
             panel.dataset['name'] = this.name;
             panel.appendChild(label);
@@ -952,7 +976,7 @@ var Input = function (_FormControl) {
 
 Input.type = 'input';
 
-var CONTROLS = defineProperty({}, Input.type, Input);
+var controls = defineProperty({}, Input.type, Input);
 
 /**
  * render form controls
@@ -965,12 +989,6 @@ var UiPlugin = function () {
     createClass(UiPlugin, [{
         key: 'apply',
         value: function apply(form) {
-            form.plugin('register-controls', function (register) {
-                for (var type in CONTROLS) {
-                    register(type, CONTROLS[type]);
-                }
-            });
-
             form.plugin('before-render-control', function () {
                 var panel = document.createElement('div');
                 panel.className = 'form-group';
@@ -981,8 +999,15 @@ var UiPlugin = function () {
     return UiPlugin;
 }();
 
-BasicForm.UiLib = UiPlugin;
-BasicForm.Control = FormControl;
+var BootStrap = {
+    controls: controls,
+    UiPlugin: UiPlugin
+};
+
+BasicForm.registerControl(BootStrap.controls);
+
+// add ui plugin of bootstrap
+BasicForm.UiLibPlugin = new BootStrap.UiPlugin();
 
 return BasicForm;
 

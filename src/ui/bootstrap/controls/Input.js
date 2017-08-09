@@ -7,12 +7,12 @@ class Input extends FormControl {
     }
 
     render(panel) {
-        const label = document.createElement('label')
-        label.innerText = this.label
-
         const dom = document.createElement('input')
         dom.className = 'form-control'
         dom.placeholder = this.placeholder
+
+        const label = document.createElement('label')
+        label.innerText = this.label
 
         panel.dataset['name'] = this.name
         panel.appendChild(label)

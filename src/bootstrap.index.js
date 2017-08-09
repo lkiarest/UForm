@@ -1,8 +1,10 @@
-import FormControl from './core/FormControl'
 import UForm from './core/BasicForm'
 import BootStrap from './ui/bootstrap'
 
-UForm.UiLib = BootStrap
-UForm.Control = FormControl
+// register bootstrap ui controls
+UForm.registerControl(BootStrap.controls)
+
+// add ui plugin of bootstrap
+UForm.UiLibPlugin = new BootStrap.UiPlugin()
 
 export default UForm
