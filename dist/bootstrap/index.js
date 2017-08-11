@@ -4,7 +4,7 @@
 	(global.UForm = factory(global.Handlebars));
 }(this, (function (Handlebars) { 'use strict';
 
-Handlebars = 'default' in Handlebars ? Handlebars['default'] : Handlebars;
+Handlebars = Handlebars && Handlebars.hasOwnProperty('default') ? Handlebars['default'] : Handlebars;
 
 /*
 	MIT License http://www.opensource.org/licenses/mit-license.php
@@ -1108,6 +1108,7 @@ Checkbox.type = 'checkbox';
 /**
  * render form controls
  */
+// all ui controls
 var controls = [Input, Checkbox];
 
 var BootStrap = {
@@ -1121,6 +1122,7 @@ var BootStrap = {
     }
 };
 
+// register bootstrap ui controls
 BootStrap.register(BasicForm);
 
 return BasicForm;

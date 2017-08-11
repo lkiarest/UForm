@@ -1,19 +1,20 @@
 {
-  "name": "emap-form-xtype",
+  "name": "UForm",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev:bs": "cross-env UILIB=bootstrap rollup -c -w",
+    "dev:bs": "cross-env UILIB=bootstrap rollup -c -w & npm run test:bs",
     "build:bs": "cross-env UILIB=bootstrap rollup -c",
     "test:bs": "static-server . -p 3000 -i test/bootstrap.html"
   },
-  "repository": "git@github.com:wisedu/emap-form-xtype.git",
-  "author": "qintianxiang <txqin@wisedu.com>",
+  "repository": "https://github.com/lkiarest/UForm.git",
+  "author": "qintianxiang <rushi_wowen@163.com>",
   "license": "MIT",
   "dependencies": {
     "tapable": "^0.2.8"
   },
   "devDependencies": {
+    "handlebars": "^4.0.10",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-latest": "^6.24.1",
     "cross-env": "^5.0.4",
