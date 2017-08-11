@@ -1,9 +1,9 @@
 /**
  * basic class of all form controls
  */
-import IForm from './IForm'
+import IControl from './IControl'
 
-class FormControl extends IForm {
+class FormControl extends IControl {
     constructor (schema) {
         super()
 
@@ -16,6 +16,7 @@ class FormControl extends IForm {
         this.type = schema.type
         this.name = schema.name
         this.label = schema.label || ''
+        // this.disabled = schema.disabled || false
         this.elem = null
     }
 
@@ -28,11 +29,11 @@ class FormControl extends IForm {
     }
 
     getValue () {
-        return this.value
+        throw new Error('user defined control should override getValue method')
     }
 
     setValue (value) {
-        this.value = value
+        throw new Error('user defined control should override setValue method')
     }
 
     getElement () {
@@ -45,6 +46,30 @@ class FormControl extends IForm {
 
     getSchema () {
         return this.schema
+    }
+
+    // get data to fill template
+    getData () {}
+
+    // get render help function
+    getRenderer () {}
+
+    // render
+    render (panel) {
+        panel.dataset['name'] = this.name
+        let renderer = this.getRenderer()
+
+        if (renderer && typeof renderer === 'function') {
+            panel.innerHTML = renderer(this.getData())
+        }
+
+        this.setElement(panel)
+    }
+
+    destroy () {
+        this.elem && this.elem.remove()
+        this.elem = null
+        this.schema = null
     }
 }
 

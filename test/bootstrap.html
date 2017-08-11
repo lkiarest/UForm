@@ -9,14 +9,25 @@
         #form {
             margin-top: 100px;
         }
+
+        .btn-get {
+            margin-top: 10px;
+        }
+
+        #msg {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <div class='container'>
         <div id='form'></div>
+        <button id='btnValue' class='btn-get'>Get Value</button>
+        <p id='msg'></p>
     </div>
 
 <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+<script src="https://cdn.bootcss.com/handlebars.js/4.0.10/handlebars.min.js"></script>
 <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
 <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <script src='../dist/bootstrap/index.js'></script>
@@ -27,14 +38,26 @@
                 {
                     name: 'schoolName',
                     type: 'input',
-                    label: '学校名称',
-                    placeholder: '请输入学校名称'
+                    label: 'School Name',
+                    placeholder: 'Please input the school name',
+                    readonly: true
+                },
+                {
+                    name: 'hasWall',
+                    type: 'checkbox',
+                    label: 'Is There A Wall ?'
                 }
             ]
         })
 
         f1.setValue({
-            schoolName: 'github'
+            schoolName: 'NUAA',
+            hasWall: true
+        })
+
+        $('#btnValue').click(() => {
+            const val = f1.getValue()
+            $('#msg').text(JSON.stringify(val))
         })
     })()
 </script>

@@ -11,6 +11,7 @@ export default {
     format: 'umd',
     dest: `dist/${UILIB}/index.js`,
     moduleName: 'UForm',
+    external: ['handlebars'],
     plugins: [
         resolve({jsnext: true, main: true}),
         commonjs(),

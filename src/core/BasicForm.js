@@ -1,7 +1,7 @@
 /**
  * basic class of all kinds of forms
  */
-import IForm from './IForm'
+import IControl from './IControl'
 import FormControl from './FormControl'
 import ControlRegister from './ControlRegister'
 import SchemaPlugin from '../plugins/SchemaPlugin'
@@ -9,7 +9,7 @@ import RenderPlugin from '../plugins/RenderPlugin'
 
 const controlReg = new ControlRegister()
 
-class BasicForm extends IForm {
+class BasicForm extends IControl {
     constructor (container, options) {
         super()
 
@@ -123,19 +123,22 @@ class BasicForm extends IForm {
     }
 
     getValue () {
-        this.controls.map(control => {
+        return this.controls.map(control => {
             let value = control.getValue()
             let name = control.getName()
 
             let typeVal = typeof value
-            value = value || ''
+            // value = value === undefined ? '' : value
 
             if (typeVal === 'function') {
                 return {name, value: value.call(control)}
             } else {
                 return {name, value}
             }
-        })
+        }).reduce((ret, data) => {
+            ret[data.name] = data.value
+            return ret
+        }, {})
     }
 
     destroy () {

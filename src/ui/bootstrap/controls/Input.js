@@ -1,22 +1,33 @@
+import Handlebars from 'handlebars'
 import FormControl from 'core/FormControl.js'
 
+const renderer = Handlebars.compile(`
+    <label>{{label}}</label>
+    <input type="{{attrs.type}}" class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabeld}}>
+`)
+
 class Input extends FormControl {
-    constructor (schema) {
-        super(schema)
-        this.placeholder = schema.placeholder || ''
+    getData () {
+        const schema = this.schema
+
+        return {
+            label: this.label,
+            placeholder: schema.placeholder || '',
+            readonly: schema.readonly ? 'readonly' : '',
+            disabeld: schema.disabeld ? 'disabeld' : ''
+        }
     }
 
-    render(panel) {
-        const dom = document.createElement('input')
-        dom.className = 'form-control'
-        dom.placeholder = this.placeholder
+    getRenderer () {
+        return renderer
+    }
 
-        const label = document.createElement('label')
-        label.innerText = this.label
+    setValue (value) {
+        $(this.getElement()).find('input').val(value)
+    }
 
-        panel.dataset['name'] = this.name
-        panel.appendChild(label)
-        panel.appendChild(dom)
+    getValue () {
+        return $(this.getElement()).find('input').val()
     }
 }
 

@@ -1,8 +1,10 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.UForm = factory());
-}(this, (function () { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('handlebars')) :
+	typeof define === 'function' && define.amd ? define(['handlebars'], factory) :
+	(global.UForm = factory(global.Handlebars));
+}(this, (function (Handlebars) { 'use strict';
+
+Handlebars = 'default' in Handlebars ? Handlebars['default'] : Handlebars;
 
 /*
 	MIT License http://www.opensource.org/licenses/mit-license.php
@@ -426,20 +428,7 @@ var createClass = function () {
 
 
 
-var defineProperty = function (obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
 
-  return obj;
-};
 
 
 
@@ -478,18 +467,18 @@ var possibleConstructorReturn = function (self, call) {
 };
 
 /**
- * @interface IForm
- * interface of all basic forms
+ * @interface IControl
+ * interface of all forms and controls
  */
-var IForm = function (_Tapable) {
-    inherits(IForm, _Tapable);
+var IControl = function (_Tapable) {
+    inherits(IControl, _Tapable);
 
-    function IForm() {
-        classCallCheck(this, IForm);
-        return possibleConstructorReturn(this, (IForm.__proto__ || Object.getPrototypeOf(IForm)).apply(this, arguments));
+    function IControl() {
+        classCallCheck(this, IControl);
+        return possibleConstructorReturn(this, (IControl.__proto__ || Object.getPrototypeOf(IControl)).apply(this, arguments));
     }
 
-    createClass(IForm, [{
+    createClass(IControl, [{
         key: 'init',
 
         // constructor () {
@@ -516,14 +505,14 @@ var IForm = function (_Tapable) {
         key: 'destroy',
         value: function destroy() {}
     }]);
-    return IForm;
+    return IControl;
 }(Tapable_1);
 
 /**
  * basic class of all form controls
  */
-var FormControl = function (_IForm) {
-    inherits(FormControl, _IForm);
+var FormControl = function (_IControl) {
+    inherits(FormControl, _IControl);
 
     function FormControl(schema) {
         classCallCheck(this, FormControl);
@@ -539,6 +528,7 @@ var FormControl = function (_IForm) {
         _this.type = schema.type;
         _this.name = schema.name;
         _this.label = schema.label || '';
+        // this.disabled = schema.disabled || false
         _this.elem = null;
         return _this;
     }
@@ -556,12 +546,12 @@ var FormControl = function (_IForm) {
     }, {
         key: 'getValue',
         value: function getValue() {
-            return this.value;
+            throw new Error('user defined control should override getValue method');
         }
     }, {
         key: 'setValue',
         value: function setValue(value) {
-            this.value = value;
+            throw new Error('user defined control should override setValue method');
         }
     }, {
         key: 'getElement',
@@ -578,9 +568,43 @@ var FormControl = function (_IForm) {
         value: function getSchema() {
             return this.schema;
         }
+
+        // get data to fill template
+
+    }, {
+        key: 'getData',
+        value: function getData() {}
+
+        // get render help function
+
+    }, {
+        key: 'getRenderer',
+        value: function getRenderer() {}
+
+        // render
+
+    }, {
+        key: 'render',
+        value: function render(panel) {
+            panel.dataset['name'] = this.name;
+            var renderer = this.getRenderer();
+
+            if (renderer && typeof renderer === 'function') {
+                panel.innerHTML = renderer(this.getData());
+            }
+
+            this.setElement(panel);
+        }
+    }, {
+        key: 'destroy',
+        value: function destroy() {
+            this.elem && this.elem.remove();
+            this.elem = null;
+            this.schema = null;
+        }
     }]);
     return FormControl;
-}(IForm);
+}(IControl);
 
 /**
  * Register all control types
@@ -678,8 +702,8 @@ var RenderPlugin = function () {
  */
 var controlReg = new ControlRegister();
 
-var BasicForm = function (_IForm) {
-    inherits(BasicForm, _IForm);
+var BasicForm = function (_IControl) {
+    inherits(BasicForm, _IControl);
 
     function BasicForm(container, options) {
         classCallCheck(this, BasicForm);
@@ -819,19 +843,22 @@ var BasicForm = function (_IForm) {
     }, {
         key: 'getValue',
         value: function getValue() {
-            this.controls.map(function (control) {
+            return this.controls.map(function (control) {
                 var value = control.getValue();
                 var name = control.getName();
 
                 var typeVal = typeof value === 'undefined' ? 'undefined' : _typeof(value);
-                value = value || '';
+                // value = value === undefined ? '' : value
 
                 if (typeVal === 'function') {
                     return { name: name, value: value.call(control) };
                 } else {
                     return { name: name, value: value };
                 }
-            });
+            }).reduce(function (ret, data) {
+                ret[data.name] = data.value;
+                return ret;
+            }, {});
         }
     }, {
         key: 'destroy',
@@ -849,7 +876,7 @@ var BasicForm = function (_IForm) {
         }
     }]);
     return BasicForm;
-}(IForm);
+}(IControl);
 
 /**
  * register control types
@@ -881,106 +908,6 @@ BasicForm.registerControl = function (type, control) {
 
 BasicForm.Control = FormControl;
 
-/**
- * basic class of all form controls
- */
-var FormControl$2 = function (_IForm) {
-    inherits(FormControl, _IForm);
-
-    function FormControl(schema) {
-        classCallCheck(this, FormControl);
-
-        var _this = possibleConstructorReturn(this, (FormControl.__proto__ || Object.getPrototypeOf(FormControl)).call(this));
-
-        if (!schema) {
-            throw Error('need schema info to create a form control');
-        }
-
-        _this.schema = schema;
-
-        _this.type = schema.type;
-        _this.name = schema.name;
-        _this.label = schema.label || '';
-        _this.elem = null;
-        return _this;
-    }
-
-    createClass(FormControl, [{
-        key: 'getType',
-        value: function getType() {
-            return this.type;
-        }
-    }, {
-        key: 'getName',
-        value: function getName() {
-            return this.name;
-        }
-    }, {
-        key: 'getValue',
-        value: function getValue() {
-            return this.value;
-        }
-    }, {
-        key: 'setValue',
-        value: function setValue(value) {
-            this.value = value;
-        }
-    }, {
-        key: 'getElement',
-        value: function getElement() {
-            return this.elem;
-        }
-    }, {
-        key: 'setElement',
-        value: function setElement(elem) {
-            this.elem = elem;
-        }
-    }, {
-        key: 'getSchema',
-        value: function getSchema() {
-            return this.schema;
-        }
-    }]);
-    return FormControl;
-}(IForm);
-
-var Input = function (_FormControl) {
-    inherits(Input, _FormControl);
-
-    function Input(schema) {
-        classCallCheck(this, Input);
-
-        var _this = possibleConstructorReturn(this, (Input.__proto__ || Object.getPrototypeOf(Input)).call(this, schema));
-
-        _this.placeholder = schema.placeholder || '';
-        return _this;
-    }
-
-    createClass(Input, [{
-        key: 'render',
-        value: function render(panel) {
-            var dom = document.createElement('input');
-            dom.className = 'form-control';
-            dom.placeholder = this.placeholder;
-
-            var label = document.createElement('label');
-            label.innerText = this.label;
-
-            panel.dataset['name'] = this.name;
-            panel.appendChild(label);
-            panel.appendChild(dom);
-        }
-    }]);
-    return Input;
-}(FormControl$2);
-
-Input.type = 'input';
-
-var controls = defineProperty({}, Input.type, Input);
-
-/**
- * render form controls
- */
 var UiPlugin = function () {
     function UiPlugin() {
         classCallCheck(this, UiPlugin);
@@ -999,15 +926,202 @@ var UiPlugin = function () {
     return UiPlugin;
 }();
 
+/**
+ * basic class of all form controls
+ */
+var FormControl$2 = function (_IControl) {
+    inherits(FormControl, _IControl);
+
+    function FormControl(schema) {
+        classCallCheck(this, FormControl);
+
+        var _this = possibleConstructorReturn(this, (FormControl.__proto__ || Object.getPrototypeOf(FormControl)).call(this));
+
+        if (!schema) {
+            throw Error('need schema info to create a form control');
+        }
+
+        _this.schema = schema;
+
+        _this.type = schema.type;
+        _this.name = schema.name;
+        _this.label = schema.label || '';
+        // this.disabled = schema.disabled || false
+        _this.elem = null;
+        return _this;
+    }
+
+    createClass(FormControl, [{
+        key: 'getType',
+        value: function getType() {
+            return this.type;
+        }
+    }, {
+        key: 'getName',
+        value: function getName() {
+            return this.name;
+        }
+    }, {
+        key: 'getValue',
+        value: function getValue() {
+            throw new Error('user defined control should override getValue method');
+        }
+    }, {
+        key: 'setValue',
+        value: function setValue(value) {
+            throw new Error('user defined control should override setValue method');
+        }
+    }, {
+        key: 'getElement',
+        value: function getElement() {
+            return this.elem;
+        }
+    }, {
+        key: 'setElement',
+        value: function setElement(elem) {
+            this.elem = elem;
+        }
+    }, {
+        key: 'getSchema',
+        value: function getSchema() {
+            return this.schema;
+        }
+
+        // get data to fill template
+
+    }, {
+        key: 'getData',
+        value: function getData() {}
+
+        // get render help function
+
+    }, {
+        key: 'getRenderer',
+        value: function getRenderer() {}
+
+        // render
+
+    }, {
+        key: 'render',
+        value: function render(panel) {
+            panel.dataset['name'] = this.name;
+            var renderer = this.getRenderer();
+
+            if (renderer && typeof renderer === 'function') {
+                panel.innerHTML = renderer(this.getData());
+            }
+
+            this.setElement(panel);
+        }
+    }, {
+        key: 'destroy',
+        value: function destroy() {
+            this.elem && this.elem.remove();
+            this.elem = null;
+            this.schema = null;
+        }
+    }]);
+    return FormControl;
+}(IControl);
+
+var renderer = Handlebars.compile('\n    <label>{{label}}</label>\n    <input type="{{attrs.type}}" class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabeld}}>\n');
+
+var Input = function (_FormControl) {
+    inherits(Input, _FormControl);
+
+    function Input() {
+        classCallCheck(this, Input);
+        return possibleConstructorReturn(this, (Input.__proto__ || Object.getPrototypeOf(Input)).apply(this, arguments));
+    }
+
+    createClass(Input, [{
+        key: 'getData',
+        value: function getData() {
+            var schema = this.schema;
+
+            return {
+                label: this.label,
+                placeholder: schema.placeholder || '',
+                readonly: schema.readonly ? 'readonly' : '',
+                disabeld: schema.disabeld ? 'disabeld' : ''
+            };
+        }
+    }, {
+        key: 'getRenderer',
+        value: function getRenderer() {
+            return renderer;
+        }
+    }, {
+        key: 'setValue',
+        value: function setValue(value) {
+            $(this.getElement()).find('input').val(value);
+        }
+    }, {
+        key: 'getValue',
+        value: function getValue() {
+            return $(this.getElement()).find('input').val();
+        }
+    }]);
+    return Input;
+}(FormControl$2);
+
+Input.type = 'input';
+
+var renderer$1 = Handlebars.compile('\n    <label class="checkbox-inline">\n        <input type="checkbox"> {{label}}\n    </label>\n');
+
+var Checkbox = function (_FormControl) {
+    inherits(Checkbox, _FormControl);
+
+    function Checkbox() {
+        classCallCheck(this, Checkbox);
+        return possibleConstructorReturn(this, (Checkbox.__proto__ || Object.getPrototypeOf(Checkbox)).apply(this, arguments));
+    }
+
+    createClass(Checkbox, [{
+        key: 'getData',
+        value: function getData() {
+            return {
+                label: this.label
+            };
+        }
+    }, {
+        key: 'getRenderer',
+        value: function getRenderer() {
+            return renderer$1;
+        }
+    }, {
+        key: 'setValue',
+        value: function setValue(value) {
+            $(this.getElement()).find('input[type=checkbox]').prop('checked', !!value);
+        }
+    }, {
+        key: 'getValue',
+        value: function getValue() {
+            return !!$(this.getElement()).find('input[type=checkbox]').prop('checked');
+        }
+    }]);
+    return Checkbox;
+}(FormControl$2);
+
+Checkbox.type = 'checkbox';
+
+/**
+ * render form controls
+ */
+var controls = [Input, Checkbox];
+
 var BootStrap = {
-    controls: controls,
-    UiPlugin: UiPlugin
+    register: function register(UForm) {
+        UForm.registerControl(controls.reduce(function (ret, control) {
+            ret[control.type] = control;
+            return ret;
+        }, {}));
+
+        UForm.UiLibPlugin = new UiPlugin();
+    }
 };
 
-BasicForm.registerControl(BootStrap.controls);
-
-// add ui plugin of bootstrap
-BasicForm.UiLibPlugin = new BootStrap.UiPlugin();
+BootStrap.register(BasicForm);
 
 return BasicForm;
 

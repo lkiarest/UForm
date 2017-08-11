@@ -1,10 +1,10 @@
 /**
- * @interface IForm
- * interface of all basic forms
+ * @interface IControl
+ * interface of all forms and controls
  */
 import Tapable from 'tapable'
 
-class IForm extends Tapable {
+class IControl extends Tapable {
     // constructor () {
     //     super()
     // }
@@ -18,4 +18,4 @@ class IForm extends Tapable {
     destroy () {}
 }
 
-export default IForm
+export default IControl

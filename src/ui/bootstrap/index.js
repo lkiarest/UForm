@@ -1,19 +1,21 @@
 /**
  * render form controls
  */
-import controls from './controls'
+import UiPlugin from './plugin'
 
-class UiPlugin {
-    apply (form) {
-        form.plugin('before-render-control', function() {
-            const panel = document.createElement('div')
-            panel.className = 'form-group'
-            return panel
-        })
-    }
-}
+// all ui controls
+import Input from './controls/Input'
+import Checkbox from './controls/Checkbox'
+
+const controls = [Input, Checkbox]
 
 export default {
-    controls,
-    UiPlugin
+    register (UForm) {
+        UForm.registerControl(controls.reduce((ret, control) => {
+            ret[control.type] = control
+            return ret
+        }, {}))
+
+        UForm.UiLibPlugin = new UiPlugin()
+    }
 }
