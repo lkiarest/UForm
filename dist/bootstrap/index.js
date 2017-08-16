@@ -883,7 +883,7 @@ var UiPlugin = function () {
                 });
 
                 container.appendChild(formBody);
-                form.applyPlugins('after-render-form', container);
+                form.applyPlugins('after-render-form', container, formBody);
             });
 
             form.plugin('before-render-control', function () {
@@ -1169,6 +1169,7 @@ Textarea.type = 'textarea';
 /**
  * render form controls
  */
+// all ui controls
 var controls = [Input, Checkbox, Textarea];
 
 var BootStrap = {
@@ -1182,6 +1183,7 @@ var BootStrap = {
     }
 };
 
+// register bootstrap ui controls
 BootStrap.register(BasicForm);
 
 return BasicForm;
