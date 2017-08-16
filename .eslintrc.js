@@ -14,6 +14,7 @@ module.exports = {
     "define": true,                           //requirejs
     "require": true,                           //requirejs
     "axios": true,
+    "Vue": true,
     "UForm": true
   },
   // add your custom rules here
