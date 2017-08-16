@@ -3,10 +3,10 @@ import FormControl from 'core/FormControl.js'
 
 const renderer = Handlebars.compile(`
     {{#if label}}<label>{{label}}</label>{{/if}}
-    <input type="{{inputType}}" class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}>
+    <textarea class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}></textarea>
 `)
 
-class Input extends FormControl {
+class Textarea extends FormControl {
     getData () {
         const schema = this.schema
 
@@ -14,8 +14,7 @@ class Input extends FormControl {
             label: this.label,
             placeholder: schema.placeholder || '',
             readonly: schema.readonly ? 'readonly' : '',
-            disabled: schema.disabled ? 'disabled' : '',
-            inputType: schema.inputType || 'text'
+            disabled: schema.disabled ? 'disabled' : ''
         }
     }
 
@@ -28,14 +27,14 @@ class Input extends FormControl {
             return
         }
 
-        $(this.getElement()).find('input').val(value)
+        $(this.getElement()).find('textarea').val(value)
     }
 
     getValue () {
-        return $(this.getElement()).find('input').val()
+        return $(this.getElement()).find('textarea').val()
     }
 }
 
-Input.type = 'input'
+Textarea.type = 'textarea'
 
-export default Input
+export default Textarea

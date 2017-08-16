@@ -20,7 +20,9 @@ export default {
             exclude: 'node_modules/**'
         }),
         alias({
-            core: 'src/core'
+            src: 'src',
+            core: 'src/core',
+            plugins: 'src/plugins'
         })
     ]
 }

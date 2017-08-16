@@ -83,7 +83,7 @@ class BasicForm extends IControl {
             let controlCls = controlReg.getControl(type)
 
             if (!controlCls) {
-                console.error('')
+                console.error('no control type:' + type)
             } else {
                 this.addControl(new controlCls(schema))
             }
@@ -98,47 +98,15 @@ class BasicForm extends IControl {
      * render form controls
      */
     render () {
-        const container = this.container,
-            controls = this.controls
-
-        this.applyPlugins('before-render-form', container)
-        const formBody = this.applyPluginsWaterfall('form-wrapper', document.createElement('form'))
-
-        controls.forEach(control => {
-            const controlPanel = this.applyPluginsWaterfall('before-render-control', null, control) || document.createElement('div')
-            formBody.appendChild(controlPanel)
-            // this.applyPlugins('render-control', control, controlPanel)
-            control.render(controlPanel)
-            this.applyPlugins('after-render-control', formBody, control)
-        })
-
-        container.appendChild(formBody)
-        this.applyPlugins('after-render-form', container)
+        this.applyPlugins('render', this)
     }
 
     setValue (value) {
-        this.controls.forEach(control => {
-            control.setValue(value[control.getName()])
-        })
+        this.applyPlugins('set-value', value)
     }
 
     getValue () {
-        return this.controls.map(control => {
-            let value = control.getValue()
-            let name = control.getName()
-
-            let typeVal = typeof value
-            // value = value === undefined ? '' : value
-
-            if (typeVal === 'function') {
-                return {name, value: value.call(control)}
-            } else {
-                return {name, value}
-            }
-        }).reduce((ret, data) => {
-            ret[data.name] = data.value
-            return ret
-        }, {})
+        return this.applyPluginsWaterfall('get-value')
     }
 
     destroy () {

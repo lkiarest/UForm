@@ -5,7 +5,10 @@
   "scripts": {
     "dev:bs": "cross-env UILIB=bootstrap rollup -c -w",
     "build:bs": "cross-env UILIB=bootstrap rollup -c",
-    "test:bs": "static-server . -p 3000 -i test/bootstrap.html"
+    "test:bs": "static-server . -p 3000 -i test/bootstrap.html",
+    "dev:elem": "cross-env UILIB=elementui rollup -c -w",
+    "build:elem": "cross-env UILIB=elementui rollup -c",
+    "test:elem": "static-server . -p 3000 -i test/elementui.html"
   },
   "repository": "git@github.com:wisedu/emap-form-xtype.git",
   "author": "qintianxiang <txqin@wisedu.com>",

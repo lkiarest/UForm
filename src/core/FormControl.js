@@ -54,18 +54,6 @@ class FormControl extends IControl {
     // get render help function
     getRenderer () {}
 
-    // render
-    render (panel) {
-        panel.dataset['name'] = this.name
-        let renderer = this.getRenderer()
-
-        if (renderer && typeof renderer === 'function') {
-            panel.innerHTML = renderer(this.getData())
-        }
-
-        this.setElement(panel)
-    }
-
     destroy () {
         this.elem && this.elem.remove()
         this.elem = null

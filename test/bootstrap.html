@@ -40,19 +40,32 @@
                     type: 'input',
                     label: 'School Name',
                     placeholder: 'Please input the school name',
-                    readonly: true
+                    disabled: true
                 },
                 {
-                    name: 'hasWall',
+                    name: 'checklist',
                     type: 'checkbox',
-                    label: 'Is There A Wall ?'
+                    label: 'We have',
+                    options: [{
+                        name: 'Teachers',
+                        value: 1
+                    }, {
+                        name: 'Students',
+                        value: '2a'
+                    }]
+                },
+                {
+                    name: 'description',
+                    type: 'textarea',
+                    label: 'About Us',
+                    placeholder: 'Something about us ...'
                 }
             ]
         })
 
         f1.setValue({
             schoolName: 'NUAA',
-            hasWall: true
+            checklist: '1'
         })
 
         $('#btnValue').click(() => {

@@ -859,6 +859,53 @@ BasicForm.registerControl = function (type, control) {
 
 BasicForm.Control = FormControl;
 
+/**
+ * for vue-based UI lib
+ */
+
+var VuePlugin = function () {
+    function VuePlugin() {
+        classCallCheck(this, VuePlugin);
+    }
+
+    createClass(VuePlugin, [{
+        key: 'apply',
+        value: function apply(form) {
+            form.plugin('before-create', function () {
+                this.vm = null;
+                this.formDataName = 'form'; // default data model name
+            });
+
+            form.plugin('after-render-form', function (container, formBody) {
+                // new vue component
+                var FormVm = Vue.extend({
+                    template: formBody.outerHTML,
+                    data: function data() {
+                        return {
+                            // init data model names
+                            form: form.options.schema.reduce(function (ret, item) {
+                                ret[item.name] = '';
+                                return ret;
+                            }, {})
+                        };
+                    }
+                });
+
+                this.vm = new FormVm().$mount(container);
+            });
+
+            form.plugin('set-value', function (value) {
+                this.vm.form = value;
+            });
+
+            form.plugin('get-value', function () {
+                return this.vm.form;
+            });
+        }
+    }]);
+    return VuePlugin;
+}();
+
 var UiPlugin = function () {
     function UiPlugin() {
         classCallCheck(this, UiPlugin);
@@ -867,28 +914,41 @@ var UiPlugin = function () {
     createClass(UiPlugin, [{
         key: 'apply',
         value: function apply(form) {
+            // first use VuePlugin
+            form.apply(new VuePlugin());
+
             form.plugin('render', function () {
                 var container = form.container;
                 var controls = form.controls;
 
                 form.applyPlugins('before-render-form', container);
-                var formBody = form.applyPluginsWaterfall('form-wrapper', document.createElement('form'));
+                var formBody = form.applyPluginsWaterfall('form-wrapper', document.createElement('el-form'));
 
                 controls.forEach(function (control) {
                     var controlPanel = form.applyPluginsWaterfall('before-render-control', null, control) || document.createElement('div');
                     formBody.appendChild(controlPanel);
                     form.applyPlugins('render-control', control, controlPanel);
-                    // control.render(controlPanel)
                     form.applyPlugins('after-render-control', formBody, control);
                 });
 
-                container.appendChild(formBody);
-                form.applyPlugins('after-render-form', container);
+                form.applyPlugins('after-render-form', container, formBody);
             });
 
-            form.plugin('before-render-control', function () {
-                var panel = document.createElement('div');
-                panel.className = 'form-group';
+            form.plugin('form-wrapper', function (wrapper) {
+                wrapper.setAttribute('v-model', this.formDataName);
+                return wrapper;
+            });
+
+            form.plugin('before-render-control', function (rendered, control) {
+                var panel = document.createElement('el-form-item');
+                var label = control.label;
+
+                if (label) {
+                    var labelWidth = form.options.labelWidth || '100';
+                    panel.setAttribute('label', label);
+                    panel.setAttribute('label-width', labelWidth + 'px');
+                }
+
                 return panel;
             });
 
@@ -901,31 +961,6 @@ var UiPlugin = function () {
                 }
 
                 control.setElement(panel);
-            });
-
-            form.plugin('set-value', function (value) {
-                form.controls.forEach(function (control) {
-                    control.setValue(value[control.getName()]);
-                });
-            });
-
-            form.plugin('get-value', function () {
-                return form.controls.map(function (control) {
-                    var value = control.getValue();
-                    var name = control.getName();
-
-                    var typeVal = typeof value === 'undefined' ? 'undefined' : _typeof(value);
-                    // value = value === undefined ? '' : value
-
-                    if (typeVal === 'function') {
-                        return { name: name, value: value.call(control) };
-                    } else {
-                        return { name: name, value: value };
-                    }
-                }).reduce(function (ret, data) {
-                    ret[data.name] = data.value;
-                    return ret;
-                }, {});
             });
         }
     }]);
@@ -1015,7 +1050,7 @@ var FormControl$2 = function (_IControl) {
     return FormControl;
 }(IControl);
 
-var renderer = Handlebars.compile('\n    {{#if label}}<label>{{label}}</label>{{/if}}\n    <input type="{{inputType}}" class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}>\n');
+var renderer = Handlebars.compile('\n    <el-input v-model="form.{{name}}" placeholder=\'{{placeholder}}\' :disabled={{disabled}}></el-input>\n');
 
 var Input = function (_FormControl) {
     inherits(Input, _FormControl);
@@ -1031,10 +1066,11 @@ var Input = function (_FormControl) {
             var schema = this.schema;
 
             return {
+                name: this.name,
                 label: this.label,
                 placeholder: schema.placeholder || '',
                 readonly: schema.readonly ? 'readonly' : '',
-                disabled: schema.disabled ? 'disabled' : '',
+                disabled: !!schema.disabled,
                 inputType: schema.inputType || 'text'
             };
         }
@@ -1049,129 +1085,23 @@ var Input = function (_FormControl) {
             if (value === undefined) {
                 return;
             }
-
-            $(this.getElement()).find('input').val(value);
         }
     }, {
         key: 'getValue',
-        value: function getValue() {
-            return $(this.getElement()).find('input').val();
-        }
+        value: function getValue() {}
     }]);
     return Input;
 }(FormControl$2);
 
 Input.type = 'input';
 
-var renderer$1 = Handlebars.compile('\n    {{#if label}}<label>{{label}}</label>{{/if}}\n    {{#each options}}\n    <div class=\'checkbox\'>\n        <label type="checkbox">\n            <input type="checkbox" value="{{value}}">\n            {{name}}\n        </label>\n    </div>\n    {{/each}}\n');
-
-var Checkbox = function (_FormControl) {
-    inherits(Checkbox, _FormControl);
-
-    function Checkbox() {
-        classCallCheck(this, Checkbox);
-        return possibleConstructorReturn(this, (Checkbox.__proto__ || Object.getPrototypeOf(Checkbox)).apply(this, arguments));
-    }
-
-    createClass(Checkbox, [{
-        key: 'getData',
-        value: function getData() {
-            return {
-                label: this.label,
-                options: this.schema.options
-            };
-        }
-    }, {
-        key: 'getRenderer',
-        value: function getRenderer() {
-            return renderer$1;
-        }
-    }, {
-        key: 'setValue',
-        value: function setValue(value) {
-            if (value === undefined) {
-                return;
-            }
-
-            var isArray = Array.isArray(value);
-
-            if (isArray) {
-                value = value.map(function (v) {
-                    return v === null || v === undefined ? '' : '' + v;
-                });
-            }
-
-            $(this.getElement()).find('input').each(function () {
-                var v = this.value;
-                this.checked = isArray && $.inArray(v, value) || v === value;
-            });
-        }
-    }, {
-        key: 'getValue',
-        value: function getValue() {
-            return $(this.getElement()).find('input:checked').map(function () {
-                return this.value;
-            }).get();
-        }
-    }]);
-    return Checkbox;
-}(FormControl$2);
-
-Checkbox.type = 'checkbox';
-
-var renderer$2 = Handlebars.compile('\n    {{#if label}}<label>{{label}}</label>{{/if}}\n    <textarea class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}></textarea>\n');
-
-var Textarea = function (_FormControl) {
-    inherits(Textarea, _FormControl);
-
-    function Textarea() {
-        classCallCheck(this, Textarea);
-        return possibleConstructorReturn(this, (Textarea.__proto__ || Object.getPrototypeOf(Textarea)).apply(this, arguments));
-    }
-
-    createClass(Textarea, [{
-        key: 'getData',
-        value: function getData() {
-            var schema = this.schema;
-
-            return {
-                label: this.label,
-                placeholder: schema.placeholder || '',
-                readonly: schema.readonly ? 'readonly' : '',
-                disabled: schema.disabled ? 'disabled' : ''
-            };
-        }
-    }, {
-        key: 'getRenderer',
-        value: function getRenderer() {
-            return renderer$2;
-        }
-    }, {
-        key: 'setValue',
-        value: function setValue(value) {
-            if (value === undefined) {
-                return;
-            }
-
-            $(this.getElement()).find('textarea').val(value);
-        }
-    }, {
-        key: 'getValue',
-        value: function getValue() {
-            return $(this.getElement()).find('textarea').val();
-        }
-    }]);
-    return Textarea;
-}(FormControl$2);
-
-Textarea.type = 'textarea';
-
 /**
  * render form controls
  */
-var controls = [Input, Checkbox, Textarea];
+// all ui controls
+var controls = [Input];
 
-var BootStrap = {
+var ElementUI = {
     register: function register(UForm) {
         UForm.registerControl(controls.reduce(function (ret, control) {
             ret[control.type] = control;
@@ -1179,10 +1109,49 @@ var BootStrap = {
         }, {}));
 
         UForm.UiLibPlugin = new UiPlugin();
+
+        var extend = function extend(Vue) {
+            Vue.component('uform', Vue.extend({
+                data: function data() {
+                    return {
+                        form: null
+                    };
+                },
+                template: '<div></div>',
+                props: {
+                    options: {
+                        type: Object,
+                        required: true
+                    }
+                },
+                mounted: function mounted() {
+                    this.form = new UForm(this.$el, this.options);
+                },
+
+                methods: {
+                    setValue: function setValue(value) {
+                        this.form.setValue(value);
+                    },
+                    getValue: function getValue() {
+                        return this.form.getValue();
+                    }
+                }
+            }));
+        };
+
+        // register [uform] as global component for convenience
+        if (window.Vue) {
+            extend(Vue);
+        } else {
+            UForm.install = function (Vue) {
+                return extend(Vue);
+            };
+        }
     }
 };
 
-BootStrap.register(BasicForm);
+// register bootstrap ui controls
+ElementUI.register(BasicForm);
 
 return BasicForm;
 

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Element UI Form</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/element-ui/1.4.2/theme-default/index.css">
+
+    <style>
+        #form {
+            margin-top: 100px;
+        }
+
+        .btn-get {
+            margin-top: 10px;
+        }
+
+        #msg {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id='app' class='container'>
+        <el-row type='flex' justify='center'>
+            <el-col :span='12'>
+                <uform ref='f1' :options='formOptions'></uform>
+                <el-button class='btn-get' @click='getVal'>Get Value</el-button>
+                <p>{{msg}}</p>
+            </el-col>
+        </el-row>
+    </div>
+
+<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+<script src="https://cdn.bootcss.com/handlebars.js/4.0.10/handlebars.min.js"></script>
+<script src="https://cdn.bootcss.com/vue/2.4.2/vue.js"></script>
+<script src="https://cdn.bootcss.com/element-ui/1.4.2/index.js"></script>
+<script src='../dist/elementui/index.js'></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: () => ({
+            msg: '',
+            formOptions: {
+                schema: [
+                    {
+                        name: 'schoolName',
+                        type: 'input',
+                        label: '学校名称',
+                        placeholder: 'Please input the school name',
+                        disabled: true
+                    }
+                ],
+                labelWidth: 80
+            }
+        }),
+        methods: {
+            getVal () {
+                // const val = this.f1.getValue()
+                // this.msg = JSON.stringify(val)
+            }
+        },
+        mounted () {
+            this.$refs.f1.setValue({
+                schoolName: 'NUAA',
+                checklist: '1'
+            })
+        }
+    })
+</script>
+</body>
+</html>
