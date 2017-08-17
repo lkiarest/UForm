@@ -22,7 +22,8 @@ export default {
         alias({
             src: 'src',
             core: 'src/core',
-            plugins: 'src/plugins'
+            plugins: 'src/plugins',
+            ui: 'src/ui'
         })
     ]
 }

@@ -430,7 +430,30 @@ var createClass = function () {
 
 
 
+var get = function get(object, property, receiver) {
+  if (object === null) object = Function.prototype;
+  var desc = Object.getOwnPropertyDescriptor(object, property);
 
+  if (desc === undefined) {
+    var parent = Object.getPrototypeOf(object);
+
+    if (parent === null) {
+      return undefined;
+    } else {
+      return get(parent, property, receiver);
+    }
+  } else if ("value" in desc) {
+    return desc.value;
+  } else {
+    var getter = desc.get;
+
+    if (getter === undefined) {
+      return undefined;
+    }
+
+    return getter.call(receiver);
+  }
+};
 
 var inherits = function (subClass, superClass) {
   if (typeof superClass !== "function" && superClass !== null) {
@@ -609,7 +632,7 @@ var ControlRegister = function () {
                 return;
             }
 
-            if (Object.getPrototypeOf(control).name !== FormControl.name) {
+            if (FormControl.prototype.isPrototypeOf(control.prototype)) {
                 console.error('register control type failed: control should be inherited of FormControl');
                 return;
             }
@@ -1050,10 +1073,81 @@ var FormControl$2 = function (_IControl) {
     return FormControl;
 }(IControl);
 
-var renderer = Handlebars.compile('\n    <el-input v-model="form.{{name}}" placeholder=\'{{placeholder}}\' :disabled={{disabled}}></el-input>\n');
+/**
+ * @class VueControl
+ * @description basic class of all vue-based controls
+ */
+var VueControl = function (_FormControl) {
+    inherits(VueControl, _FormControl);
 
-var Input = function (_FormControl) {
-    inherits(Input, _FormControl);
+    function VueControl() {
+        classCallCheck(this, VueControl);
+        return possibleConstructorReturn(this, (VueControl.__proto__ || Object.getPrototypeOf(VueControl)).apply(this, arguments));
+    }
+
+    createClass(VueControl, [{
+        key: 'getData',
+        value: function getData() {
+            var props = this.allowedProps();
+            var schema = this.schema;
+            var name = this.name;
+
+            if (!props) {
+                console.warn('no props specified with control: ' + name);
+                return { name: name, props: [] };
+            }
+
+            if (schema) {
+                Object.keys(props).forEach(function (key) {
+                    if (key in schema) {
+                        props[key] = schema[key];
+                    }
+                });
+            }
+
+            return {
+                name: name,
+                props: Object.keys(props).filter(function (key) {
+                    return props[key] !== null;
+                }).map(function (key) {
+                    var value = props[key];
+                    if (typeof value !== 'string') {
+                        key = ':' + key;
+                    }
+
+                    return { key: key, value: value };
+                })
+            };
+        }
+
+        /**
+         * define all allowed properties, to be override
+         */
+
+    }, {
+        key: 'allowedProps',
+        value: function allowedProps() {
+            return null;
+        }
+    }]);
+    return VueControl;
+}(FormControl$2);
+
+/**
+ * make vue render function, process props
+ */
+
+
+VueControl.makeRenderer = function (tmpl) {
+    tmpl = tmpl.replace('{{props}}', '\n        {{#each props}}\n        {{key}}="{{value}}"\n        {{/each}}\n    ');
+
+    return Handlebars.compile(tmpl);
+};
+
+var renderer = VueControl.makeRenderer('\n    <el-input v-model="form.{{name}}" {{props}}></el-input>\n');
+
+var Input = function (_VueControl) {
+    inherits(Input, _VueControl);
 
     function Input() {
         classCallCheck(this, Input);
@@ -1061,17 +1155,14 @@ var Input = function (_FormControl) {
     }
 
     createClass(Input, [{
-        key: 'getData',
-        value: function getData() {
-            var schema = this.schema;
-
+        key: 'allowedProps',
+        value: function allowedProps() {
             return {
-                name: this.name,
-                label: this.label,
-                placeholder: schema.placeholder || '',
-                readonly: schema.readonly ? 'readonly' : '',
-                disabled: !!schema.disabled,
-                inputType: schema.inputType || 'text'
+                type: 'text',
+                maxlength: null, // 可选属性设置为 null
+                disabled: false,
+                inputType: 'text',
+                placeholder: null
             };
         }
     }, {
@@ -1079,27 +1170,77 @@ var Input = function (_FormControl) {
         value: function getRenderer() {
             return renderer;
         }
-    }, {
-        key: 'setValue',
-        value: function setValue(value) {
-            if (value === undefined) {
-                return;
-            }
-        }
-    }, {
-        key: 'getValue',
-        value: function getValue() {}
     }]);
     return Input;
-}(FormControl$2);
+}(VueControl);
 
 Input.type = 'input';
+
+var renderer$1 = VueControl.makeRenderer('\n    <el-checkbox-group v-model="form.{{name}}" {{props}}>\n        {{#each options}}\n            <el-checkbox label="{{name}}" name="{{../name}}"{{#if disabled}} :disabled=\'true\'{{/if}}></el-checkbox>\n        {{/each}}\n    </el-checkbox-group>\n');
+
+var Checkbox = function (_VueControl) {
+    inherits(Checkbox, _VueControl);
+
+    function Checkbox() {
+        classCallCheck(this, Checkbox);
+        return possibleConstructorReturn(this, (Checkbox.__proto__ || Object.getPrototypeOf(Checkbox)).apply(this, arguments));
+    }
+
+    createClass(Checkbox, [{
+        key: 'getData',
+        value: function getData() {
+            var data = get(Checkbox.prototype.__proto__ || Object.getPrototypeOf(Checkbox.prototype), 'getData', this).call(this);
+            data.options = this.schema.options; // more data definition
+            return data;
+        }
+    }, {
+        key: 'getRenderer',
+        value: function getRenderer() {
+            return renderer$1;
+        }
+    }]);
+    return Checkbox;
+}(VueControl);
+
+Checkbox.type = 'checkbox';
+
+var renderer$2 = VueControl.makeRenderer('\n    <el-input type=\'textarea\' v-model="form.{{name}}"{{props}}></el-input>\n');
+
+var Textarea = function (_VueControl) {
+    inherits(Textarea, _VueControl);
+
+    function Textarea() {
+        classCallCheck(this, Textarea);
+        return possibleConstructorReturn(this, (Textarea.__proto__ || Object.getPrototypeOf(Textarea)).apply(this, arguments));
+    }
+
+    createClass(Textarea, [{
+        key: 'allowedProps',
+        value: function allowedProps() {
+            return {
+                type: 'text',
+                maxlength: null, // 可选属性设置为 null
+                disabled: false,
+                inputType: 'text',
+                placeholder: null,
+                rows: 3 // 行数
+            };
+        }
+    }, {
+        key: 'getRenderer',
+        value: function getRenderer() {
+            return renderer$2;
+        }
+    }]);
+    return Textarea;
+}(VueControl);
+
+Textarea.type = 'textarea';
 
 /**
  * render form controls
  */
-// all ui controls
-var controls = [Input];
+var controls = [Input, Checkbox, Textarea];
 
 var ElementUI = {
     register: function register(UForm) {
@@ -1150,7 +1291,6 @@ var ElementUI = {
     }
 };
 
-// register bootstrap ui controls
 ElementUI.register(BasicForm);
 
 return BasicForm;

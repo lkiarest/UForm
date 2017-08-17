@@ -1,17 +1,18 @@
 import VueControl from 'ui/VueControl.js'
 
 const renderer = VueControl.makeRenderer(`
-    <el-input v-model="form.{{name}}" {{props}}></el-input>
+    <el-input type='textarea' v-model="form.{{name}}"{{props}}></el-input>
 `)
 
-class Input extends VueControl {
+class Textarea extends VueControl {
     allowedProps () {
         return {
             type: 'text',
             maxlength: null, // 可选属性设置为 null
             disabled: false,
             inputType: 'text',
-            placeholder: null
+            placeholder: null,
+            rows: 3 // 行数
         }
     }
 
@@ -20,6 +21,6 @@ class Input extends VueControl {
     }
 }
 
-Input.type = 'input'
+Textarea.type = 'textarea'
 
-export default Input
+export default Textarea

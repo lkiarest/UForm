@@ -48,6 +48,25 @@
                         label: '学校名称',
                         placeholder: 'Please input the school name',
                         disabled: true
+                    },
+                    {
+                        name: 'checklist',
+                        type: 'checkbox',
+                        label: 'We have',
+                        options: [{
+                            name: 'Teachers'
+                        }, {
+                            name: 'Students'
+                        }, {
+                            name: 'Monkey',
+                            disabled: true
+                        }]
+                    },
+                    {
+                        name: 'description',
+                        type: 'textarea',
+                        label: 'About Us',
+                        placeholder: 'Something about us ...'
                     }
                 ],
                 labelWidth: 80
@@ -55,14 +74,13 @@
         }),
         methods: {
             getVal () {
-                // const val = this.f1.getValue()
-                // this.msg = JSON.stringify(val)
+                this.msg = JSON.stringify(this.$refs.f1.getValue())
             }
         },
         mounted () {
             this.$refs.f1.setValue({
                 schoolName: 'NUAA',
-                checklist: '1'
+                checklist: ['Students'] // need an empty array if no option selected
             })
         }
     })

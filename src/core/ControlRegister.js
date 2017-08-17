@@ -14,7 +14,7 @@ class ControlRegister {
             return
         }
 
-        if (Object.getPrototypeOf(control).name !== FormControl.name) {
+        if (FormControl.prototype.isPrototypeOf(control.prototype)) {
             console.error('register control type failed: control should be inherited of FormControl')
             return
         }

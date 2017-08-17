@@ -49,7 +49,8 @@ class FormControl extends IControl {
     }
 
     // get data to fill template
-    getData () {}
+    getData () {
+    }
 
     // get render help function
     getRenderer () {}
