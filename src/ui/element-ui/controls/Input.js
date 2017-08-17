@@ -7,10 +7,8 @@ const renderer = VueControl.makeRenderer(`
 class Input extends VueControl {
     allowedProps () {
         return {
-            type: 'text',
             maxlength: null, // 可选属性设置为 null
             disabled: false,
-            inputType: 'text',
             placeholder: null
         }
     }

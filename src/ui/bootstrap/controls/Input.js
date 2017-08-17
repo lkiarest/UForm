@@ -3,7 +3,7 @@ import FormControl from 'core/FormControl.js'
 
 const renderer = Handlebars.compile(`
     {{#if label}}<label>{{label}}</label>{{/if}}
-    <input type="{{inputType}}" class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}>
+    <input type="text" class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}>
 `)
 
 class Input extends FormControl {

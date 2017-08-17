@@ -35,6 +35,7 @@
 <script src="https://cdn.bootcss.com/vue/2.4.2/vue.js"></script>
 <script src="https://cdn.bootcss.com/element-ui/1.4.2/index.js"></script>
 <script src='../dist/elementui/index.js'></script>
+<script src='./uform-plugin-debug.js'></script>
 <script>
     new Vue({
         el: '#app',
@@ -67,9 +68,53 @@
                         type: 'textarea',
                         label: 'About Us',
                         placeholder: 'Something about us ...'
+                    },
+                    {
+                        name: 'years',
+                        type: 'select',
+                        label: 'Years',
+                        multiple: true,
+                        placeholder: 'Please select a year ...',
+                        options: [{
+                            label: '2000', value: 2000
+                        }, {
+                            label: '2010', value: 2010
+                        }, {
+                            label: '2020', value: 2020, disabled: true
+                        }, {
+                            label: '2030', value: 2030
+                        }]
+                    },
+                    {
+                        name: 'remoteYear',
+                        type: 'select',
+                        label: 'Remote Year',
+                        placeholder: 'load remote data ...',
+                        remote: true,
+                        options: [],
+                        filterable: true,
+                        loading: false,
+                        remoteMethod: function(query, formVm, control, data) {
+                            console.log(arguments)
+                            control.loading = true
+                            setTimeout(() => {
+                                control.options = [{
+                                    label: '2000', value: 2000
+                                }, {
+                                    label: '2010', value: 2010
+                                }, {
+                                    label: '2020', value: 2020, disabled: true
+                                }, {
+                                    label: '2030', value: 2030
+                                }]
+
+                                control.loading = false
+                            }, 1000)
+                        }
                     }
                 ],
-                labelWidth: 80
+                labelWidth: 80,
+                plugins: [DebugPlugin]
             }
         }),
         methods: {

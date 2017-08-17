@@ -905,6 +905,28 @@ var VuePlugin = function () {
                     template: formBody.outerHTML,
                     data: function data() {
                         return {
+                            // controls
+                            controls: form.controls.reduce(function (ret, item) {
+                                var name = item.name;
+                                ret[name] = item;
+
+                                // inject context into all methods
+                                Object.keys(item).forEach(function (key) {
+                                    var value = item[key];
+                                    if (typeof value === 'function') {
+                                        item[key] = function () {
+                                            return function () {
+                                                var context = this;
+                                                var args = [].slice.call(arguments);
+                                                args = args.concat([form.vm, item, form.vm.form]);
+                                                return value.apply(context, args);
+                                            };
+                                        }();
+                                    }
+                                });
+
+                                return ret;
+                            }, {}),
                             // init data model names
                             form: form.options.schema.reduce(function (ret, item) {
                                 ret[item.name] = '';
@@ -918,7 +940,7 @@ var VuePlugin = function () {
             });
 
             form.plugin('set-value', function (value) {
-                this.vm.form = value;
+                Object.assign(this.vm.form, value);
             });
 
             form.plugin('get-value', function () {
@@ -1077,6 +1099,13 @@ var FormControl$2 = function (_IControl) {
  * @class VueControl
  * @description basic class of all vue-based controls
  */
+Handlebars.registerHelper('linecase', function (options) {
+    var str = options.fn(this);
+    return str.replace(/[A-Z]/g, function (m) {
+        return '-' + m.toLowerCase();
+    });
+});
+
 var VueControl = function (_FormControl) {
     inherits(VueControl, _FormControl);
 
@@ -1088,6 +1117,8 @@ var VueControl = function (_FormControl) {
     createClass(VueControl, [{
         key: 'getData',
         value: function getData() {
+            var _this2 = this;
+
             var props = this.allowedProps();
             var schema = this.schema;
             var name = this.name;
@@ -1111,10 +1142,7 @@ var VueControl = function (_FormControl) {
                     return props[key] !== null;
                 }).map(function (key) {
                     var value = props[key];
-                    if (typeof value !== 'string') {
-                        key = ':' + key;
-                    }
-
+                    _this2[key] = value;
                     return { key: key, value: value };
                 })
             };
@@ -1139,7 +1167,7 @@ var VueControl = function (_FormControl) {
 
 
 VueControl.makeRenderer = function (tmpl) {
-    tmpl = tmpl.replace('{{props}}', '\n        {{#each props}}\n        {{key}}="{{value}}"\n        {{/each}}\n    ');
+    tmpl = tmpl.replace('{{props}}', '\n        {{#each props}}\n        :{{#linecase}}{{key}}{{/linecase}}="controls.{{../name}}.{{key}}"\n        {{/each}}\n    ');
 
     return Handlebars.compile(tmpl);
 };
@@ -1158,10 +1186,8 @@ var Input = function (_VueControl) {
         key: 'allowedProps',
         value: function allowedProps() {
             return {
-                type: 'text',
                 maxlength: null, // 可选属性设置为 null
                 disabled: false,
-                inputType: 'text',
                 placeholder: null
             };
         }
@@ -1176,7 +1202,7 @@ var Input = function (_VueControl) {
 
 Input.type = 'input';
 
-var renderer$1 = VueControl.makeRenderer('\n    <el-checkbox-group v-model="form.{{name}}" {{props}}>\n        {{#each options}}\n            <el-checkbox label="{{name}}" name="{{../name}}"{{#if disabled}} :disabled=\'true\'{{/if}}></el-checkbox>\n        {{/each}}\n    </el-checkbox-group>\n');
+var renderer$1 = VueControl.makeRenderer('\n    <el-checkbox-group v-model="form.{{name}}" {{props}}>\n        {{#each options}}\n            <el-checkbox\n                label="{{name}}"\n                name="{{../name}}"\n                {{#if disabled}} :disabled=\'true\'{{/if}}\n            >\n            </el-checkbox>\n        {{/each}}\n    </el-checkbox-group>\n');
 
 var Checkbox = function (_VueControl) {
     inherits(Checkbox, _VueControl);
@@ -1218,7 +1244,6 @@ var Textarea = function (_VueControl) {
         key: 'allowedProps',
         value: function allowedProps() {
             return {
-                type: 'text',
                 maxlength: null, // 可选属性设置为 null
                 disabled: false,
                 inputType: 'text',
@@ -1237,10 +1262,56 @@ var Textarea = function (_VueControl) {
 
 Textarea.type = 'textarea';
 
+var renderer$3 = VueControl.makeRenderer('\n    <el-select v-model="form.{{name}}" {{props}}>\n        <el-option\n            v-for="item in controls.{{name}}.options"\n            :key=\'item.value\'\n            :label="item.label"\n            :value="item.value"\n            :disabled="item.disabled">\n        </el-option>\n    </el-select>\n');
+
+var Select = function (_VueControl) {
+    inherits(Select, _VueControl);
+
+    function Select(schema) {
+        classCallCheck(this, Select);
+
+        var _this = possibleConstructorReturn(this, (Select.__proto__ || Object.getPrototypeOf(Select)).call(this, schema));
+
+        _this.options = schema.options;
+        return _this;
+    }
+
+    createClass(Select, [{
+        key: 'allowedProps',
+        value: function allowedProps() {
+            return {
+                placeholder: '请选择',
+                size: null,
+                loading: false,
+                disabled: false,
+                multiple: false, // 可多选
+                filterable: false, // 可搜索
+                remote: false, // 是否远程搜索
+                remoteMethod: null // 远程搜索方法
+            };
+        }
+    }, {
+        key: 'getData',
+        value: function getData() {
+            var data = get(Select.prototype.__proto__ || Object.getPrototypeOf(Select.prototype), 'getData', this).call(this);
+            data.options = this.options; // more data definition
+            return data;
+        }
+    }, {
+        key: 'getRenderer',
+        value: function getRenderer() {
+            return renderer$3;
+        }
+    }]);
+    return Select;
+}(VueControl);
+
+Select.type = 'select';
+
 /**
  * render form controls
  */
-var controls = [Input, Checkbox, Textarea];
+var controls = [Input, Checkbox, Textarea, Select];
 
 var ElementUI = {
     register: function register(UForm) {

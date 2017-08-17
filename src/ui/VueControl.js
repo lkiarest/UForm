@@ -5,6 +5,17 @@
 import Handlebars from 'handlebars'
 import FormControl from 'core/FormControl.js'
 
+/**
+ * convert camel-case string to line case，
+ * 'userName'  => 'user-name'
+ */
+Handlebars.registerHelper('linecase', function(options) {
+    let str = options.fn(this)
+    return str.replace(/[A-Z]/g, function(m) {
+        return '-' + m.toLowerCase()
+    })
+})
+
 class VueControl extends FormControl {
     getData () {
         const props = this.allowedProps()
@@ -30,10 +41,7 @@ class VueControl extends FormControl {
                 return props[key] !== null
             }).map(key => {
                 const value = props[key]
-                if (typeof value !== 'string') {
-                    key = `:${key}`
-                }
-
+                this[key] = value
                 return {key, value}
             })
         }
@@ -53,7 +61,7 @@ class VueControl extends FormControl {
 VueControl.makeRenderer = (tmpl) => {
     tmpl = tmpl.replace('{{props}}', `
         {{#each props}}
-        {{key}}="{{value}}"
+        :{{#linecase}}{{key}}{{/linecase}}="controls.{{../name}}.{{key}}"
         {{/each}}
     `)
 
