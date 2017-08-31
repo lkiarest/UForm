@@ -525,7 +525,7 @@ var FormControl = function (_IControl) {
 
         _this.schema = schema;
 
-        _this.type = schema.type;
+        _this.type = schema.$type;
         _this.name = schema.name;
         _this.label = schema.label || '';
         // this.disabled = schema.disabled || false
@@ -609,7 +609,7 @@ var ControlRegister = function () {
                 return;
             }
 
-            if (Object.getPrototypeOf(control).name !== FormControl.name) {
+            if (FormControl.prototype.isPrototypeOf(control.prototype)) {
                 console.error('register control type failed: control should be inherited of FormControl');
                 return;
             }
@@ -776,7 +776,7 @@ var BasicForm = function (_IControl) {
             var _this2 = this;
 
             schemaList.forEach(function (schema) {
-                var type = schema.type;
+                var type = schema.$type;
                 var controlCls = controlReg.getControl(type);
 
                 if (!controlCls) {
@@ -949,7 +949,7 @@ var FormControl$2 = function (_IControl) {
 
         _this.schema = schema;
 
-        _this.type = schema.type;
+        _this.type = schema.$type;
         _this.name = schema.name;
         _this.label = schema.label || '';
         // this.disabled = schema.disabled || false
@@ -1015,7 +1015,7 @@ var FormControl$2 = function (_IControl) {
     return FormControl;
 }(IControl);
 
-var renderer = Handlebars.compile('\n    {{#if label}}<label>{{label}}</label>{{/if}}\n    <input type="{{inputType}}" class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}>\n');
+var renderer = Handlebars.compile('\n    {{#if label}}<label>{{label}}</label>{{/if}}\n    <input type="text" class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}>\n');
 
 var Input = function (_FormControl) {
     inherits(Input, _FormControl);
@@ -1099,6 +1099,8 @@ var Checkbox = function (_FormControl) {
                 value = value.map(function (v) {
                     return v === null || v === undefined ? '' : '' + v;
                 });
+            } else {
+                value = value === null || value === undefined ? '' : '' + value;
             }
 
             $(this.getElement()).find('input').each(function () {
@@ -1119,7 +1121,70 @@ var Checkbox = function (_FormControl) {
 
 Checkbox.type = 'checkbox';
 
-var renderer$2 = Handlebars.compile('\n    {{#if label}}<label>{{label}}</label>{{/if}}\n    <textarea class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}></textarea>\n');
+var cnt = 0;
+
+var renderer$2 = Handlebars.compile('\n    {{#if label}}<label>{{label}}</label>{{/if}}\n    {{#each options}}\n    <div class=\'radio\'>\n        <label type="radio">\n            <input type="radio" name="{{../inputName}}" value="{{value}}">\n            {{name}}\n        </label>\n    </div>\n    {{/each}}\n');
+
+var Radio = function (_FormControl) {
+    inherits(Radio, _FormControl);
+
+    function Radio(schema) {
+        classCallCheck(this, Radio);
+
+        var _this = possibleConstructorReturn(this, (Radio.__proto__ || Object.getPrototypeOf(Radio)).call(this, schema));
+
+        _this.inputName = _this.getName() + cnt++;
+        return _this;
+    }
+
+    createClass(Radio, [{
+        key: 'getData',
+        value: function getData() {
+            return {
+                inputName: this.inputName,
+                label: this.label,
+                options: this.schema.options
+            };
+        }
+    }, {
+        key: 'getRenderer',
+        value: function getRenderer() {
+            return renderer$2;
+        }
+    }, {
+        key: 'setValue',
+        value: function setValue(value) {
+            if (value === undefined) {
+                return;
+            }
+
+            var isArray = Array.isArray(value);
+
+            if (isArray) {
+                value = value.map(function (v) {
+                    return v === null || v === undefined ? '' : '' + v;
+                });
+            } else {
+                value = value === null || value === undefined ? '' : '' + value;
+            }
+
+            $(this.getElement()).find('input').each(function () {
+                var v = this.value;
+                this.checked = isArray && $.inArray(v, value) || v === value;
+            });
+        }
+    }, {
+        key: 'getValue',
+        value: function getValue() {
+            return $(this.getElement()).find('input:checked').get(0).value;
+        }
+    }]);
+    return Radio;
+}(FormControl$2);
+
+Radio.type = 'radio';
+
+var renderer$3 = Handlebars.compile('\n    {{#if label}}<label>{{label}}</label>{{/if}}\n    <textarea class="form-control" placeholder="{{placeholder}}" {{readonly}} {{disabled}}></textarea>\n');
 
 var Textarea = function (_FormControl) {
     inherits(Textarea, _FormControl);
@@ -1144,7 +1209,7 @@ var Textarea = function (_FormControl) {
     }, {
         key: 'getRenderer',
         value: function getRenderer() {
-            return renderer$2;
+            return renderer$3;
         }
     }, {
         key: 'setValue',
@@ -1169,8 +1234,7 @@ Textarea.type = 'textarea';
 /**
  * render form controls
  */
-// all ui controls
-var controls = [Input, Checkbox, Textarea];
+var controls = [Input, Checkbox, Radio, Textarea];
 
 var BootStrap = {
     register: function register(UForm) {
@@ -1183,7 +1247,6 @@ var BootStrap = {
     }
 };
 
-// register bootstrap ui controls
 BootStrap.register(BasicForm);
 
 return BasicForm;

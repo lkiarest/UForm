@@ -79,7 +79,7 @@ class BasicForm extends IControl {
      */
     buildControls (schemaList) {
         schemaList.forEach(schema => {
-            const type = schema.type
+            const type = schema.$type
             let controlCls = controlReg.getControl(type)
 
             if (!controlCls) {

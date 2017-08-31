@@ -13,7 +13,7 @@ class FormControl extends IControl {
 
         this.schema = schema
 
-        this.type = schema.type
+        this.type = schema.$type
         this.name = schema.name
         this.label = schema.label || ''
         // this.disabled = schema.disabled || false

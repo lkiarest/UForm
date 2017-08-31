@@ -36,15 +36,15 @@
         let f1 = new UForm('#form', {
             schema: [
                 {
+                    $type: 'input',
                     name: 'schoolName',
-                    type: 'input',
                     label: 'School Name',
                     placeholder: 'Please input the school name',
                     disabled: true
                 },
                 {
+                    $type: 'checkbox',
                     name: 'checklist',
-                    type: 'checkbox',
                     label: 'We have',
                     options: [{
                         name: 'Teachers',
@@ -55,8 +55,20 @@
                     }]
                 },
                 {
+                    $type: 'radio',
+                    name: 'role',
+                    label: 'User Role',
+                    options: [{
+                        name: 'Teacher',
+                        value: 1
+                    }, {
+                        name: 'Student',
+                        value: 2
+                    }]
+                },
+                {
+                    $type: 'textarea',
                     name: 'description',
-                    type: 'textarea',
                     label: 'About Us',
                     placeholder: 'Something about us ...'
                 }
@@ -65,7 +77,8 @@
 
         f1.setValue({
             schoolName: 'NUAA',
-            checklist: '1'
+            checklist: '1',
+            role: 2
         })
 
         $('#btnValue').click(() => {

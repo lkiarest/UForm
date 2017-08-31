@@ -1,21 +1,29 @@
 import Handlebars from 'handlebars'
 import FormControl from 'core/FormControl.js'
 
+let cnt = 0
+
 const renderer = Handlebars.compile(`
     {{#if label}}<label>{{label}}</label>{{/if}}
     {{#each options}}
-    <div class='checkbox'>
-        <label type="checkbox">
-            <input type="checkbox" value="{{value}}">
+    <div class='radio'>
+        <label type="radio">
+            <input type="radio" name="{{../inputName}}" value="{{value}}">
             {{name}}
         </label>
     </div>
     {{/each}}
 `)
 
-class Checkbox extends FormControl {
+class Radio extends FormControl {
+    constructor (schema) {
+        super(schema)
+        this.inputName = this.getName() + cnt++
+    }
+
     getData () {
         return {
+            inputName: this.inputName,
             label: this.label,
             options: this.schema.options
         }
@@ -47,12 +55,10 @@ class Checkbox extends FormControl {
     }
 
     getValue () {
-        return $(this.getElement()).find('input:checked').map(function() {
-            return this.value
-        }).get()
+        return $(this.getElement()).find('input:checked').get(0).value
     }
 }
 
-Checkbox.type = 'checkbox'
+Radio.type = 'radio'
 
-export default Checkbox
+export default Radio

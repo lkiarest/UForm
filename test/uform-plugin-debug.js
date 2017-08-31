@@ -1,10 +1,10 @@
 /**
- * 专门打日志
+ * 调试用 plugin
  */
 const DebugPlugin = {
     apply (form) {
         form.plugin('after-render-control', function(formBody, control) {
-            console.log(formBody)
+            console.log('[DebugPlugin]:' + formBody)
         })
     }
 }

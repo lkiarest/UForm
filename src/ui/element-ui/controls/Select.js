@@ -1,7 +1,7 @@
 import VueControl from 'ui/VueControl.js'
 
 const renderer = VueControl.makeRenderer(`
-    <el-select v-model="form.{{name}}" {{props}}>
+    <el-select v-model="form.{{name}}" {{props}} {{events}}>
         <el-option
             v-for="item in controls.{{name}}.options"
             :key='item.value'
@@ -22,19 +22,20 @@ class Select extends VueControl {
         return {
             placeholder: '请选择',
             size: null,
-            loading: false,
             disabled: false,
             multiple: false, // 可多选
             filterable: false, // 可搜索
             remote: false, // 是否远程搜索
-            remoteMethod: null // 远程搜索方法
+            remoteMethod: null, // 远程搜索方法
+            loading: false,
+            loadingText: '加载中',
+            noMatchText: '无匹配数据',
+            noDataText: '无数据'
         }
     }
 
-    getData () {
-        let data = super.getData()
-        data.options = this.options // more data definition
-        return data
+    allowedEvents () {
+        return ['change', 'visibleChange']
     }
 
     getRenderer () {

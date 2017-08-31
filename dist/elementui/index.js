@@ -548,7 +548,7 @@ var FormControl = function (_IControl) {
 
         _this.schema = schema;
 
-        _this.type = schema.type;
+        _this.type = schema.$type;
         _this.name = schema.name;
         _this.label = schema.label || '';
         // this.disabled = schema.disabled || false
@@ -799,7 +799,7 @@ var BasicForm = function (_IControl) {
             var _this2 = this;
 
             schemaList.forEach(function (schema) {
-                var type = schema.type;
+                var type = schema.$type;
                 var controlCls = controlReg.getControl(type);
 
                 if (!controlCls) {
@@ -899,7 +899,37 @@ var VuePlugin = function () {
                 this.formDataName = 'form'; // default data model name
             });
 
+            form.plugin('form-wrapper', function (wrapper) {
+                wrapper.setAttribute('v-model', this.formDataName);
+                return wrapper;
+            });
+
             form.plugin('after-render-form', function (container, formBody) {
+                // prepare events handler
+                var methods = {};
+
+                form.controls.forEach(function (control) {
+                    var name = control.name;
+                    var events = control.schema.$events;
+                    var usedEvents = control.getData().events;
+
+                    if (usedEvents && usedEvents.length > 0) {
+                        usedEvents.forEach(function (ae) {
+                            var methodName = name + ae;
+                            if (!methods[methodName]) {
+                                var callback = events[ae];
+                                methods[methodName] = function () {
+                                    return function () {
+                                        var args = Array.prototype.slice.call(arguments);
+                                        args = args.concat([control, form]);
+                                        return callback.apply(this, args);
+                                    };
+                                }();
+                            }
+                        });
+                    }
+                });
+
                 // new vue component
                 var FormVm = Vue.extend({
                     template: formBody.outerHTML,
@@ -933,7 +963,9 @@ var VuePlugin = function () {
                                 return ret;
                             }, {})
                         };
-                    }
+                    },
+
+                    methods: methods
                 });
 
                 this.vm = new FormVm().$mount(container);
@@ -977,11 +1009,6 @@ var UiPlugin = function () {
                 });
 
                 form.applyPlugins('after-render-form', container, formBody);
-            });
-
-            form.plugin('form-wrapper', function (wrapper) {
-                wrapper.setAttribute('v-model', this.formDataName);
-                return wrapper;
             });
 
             form.plugin('before-render-control', function (rendered, control) {
@@ -1029,7 +1056,7 @@ var FormControl$2 = function (_IControl) {
 
         _this.schema = schema;
 
-        _this.type = schema.type;
+        _this.type = schema.$type;
         _this.name = schema.name;
         _this.label = schema.label || '';
         // this.disabled = schema.disabled || false
@@ -1123,6 +1150,13 @@ var VueControl = function (_FormControl) {
             var schema = this.schema;
             var name = this.name;
 
+            var events = this.allowedEvents() || [];
+            var $methods = this.schema.$events || {};
+
+            events = events.filter(function (event) {
+                return !!$methods[event];
+            });
+
             if (!props) {
                 console.warn('no props specified with control: ' + name);
                 return { name: name, props: [] };
@@ -1144,17 +1178,30 @@ var VueControl = function (_FormControl) {
                     var value = props[key];
                     _this2[key] = value;
                     return { key: key, value: value };
-                })
+                }),
+                events: events
             };
         }
 
         /**
          * define all allowed properties, to be override
+         * @return {Object} properties name list
          */
 
     }, {
         key: 'allowedProps',
         value: function allowedProps() {
+            return null;
+        }
+
+        /**
+         * defined all events, to be override
+         * @return {Array} events name list
+         */
+
+    }, {
+        key: 'allowedEvents',
+        value: function allowedEvents() {
             return null;
         }
     }]);
@@ -1167,12 +1214,12 @@ var VueControl = function (_FormControl) {
 
 
 VueControl.makeRenderer = function (tmpl) {
-    tmpl = tmpl.replace('{{props}}', '\n        {{#each props}}\n        :{{#linecase}}{{key}}{{/linecase}}="controls.{{../name}}.{{key}}"\n        {{/each}}\n    ');
+    tmpl = tmpl.replace('{{props}}', '\n        {{#each props}}\n        :{{#linecase}}{{key}}{{/linecase}}="controls.{{../name}}.{{key}}"\n        {{/each}}\n    ').replace('{{events}}', '\n        {{#each events}}\n        @{{#linecase}}{{this}}{{/linecase}}="{{../name}}{{this}}"\n        {{/each}}\n    ');
 
     return Handlebars.compile(tmpl);
 };
 
-var renderer = VueControl.makeRenderer('\n    <el-input v-model="form.{{name}}" {{props}}></el-input>\n');
+var renderer = VueControl.makeRenderer('\n    <el-input v-model="form.{{name}}" {{props}} {{events}}></el-input>\n');
 
 var Input = function (_VueControl) {
     inherits(Input, _VueControl);
@@ -1186,10 +1233,16 @@ var Input = function (_VueControl) {
         key: 'allowedProps',
         value: function allowedProps() {
             return {
+                type: 'text',
                 maxlength: null, // 可选属性设置为 null
                 disabled: false,
                 placeholder: null
             };
+        }
+    }, {
+        key: 'allowedEvents',
+        value: function allowedEvents() {
+            return ['click', 'blur', 'focus', 'change'];
         }
     }, {
         key: 'getRenderer',
@@ -1202,7 +1255,7 @@ var Input = function (_VueControl) {
 
 Input.type = 'input';
 
-var renderer$1 = VueControl.makeRenderer('\n    <el-checkbox-group v-model="form.{{name}}" {{props}}>\n        {{#each options}}\n            <el-checkbox\n                label="{{name}}"\n                name="{{../name}}"\n                {{#if disabled}} :disabled=\'true\'{{/if}}\n            >\n            </el-checkbox>\n        {{/each}}\n    </el-checkbox-group>\n');
+var renderer$1 = VueControl.makeRenderer('\n    <el-checkbox-group v-model="form.{{name}}" {{props}} {{events}}>\n        {{#each options}}\n            <el-checkbox\n                label="{{name}}"\n                name="{{../name}}"\n                {{#if disabled}} :disabled=\'true\'{{/if}}\n            >\n            </el-checkbox>\n        {{/each}}\n    </el-checkbox-group>\n');
 
 var Checkbox = function (_VueControl) {
     inherits(Checkbox, _VueControl);
@@ -1215,6 +1268,7 @@ var Checkbox = function (_VueControl) {
     createClass(Checkbox, [{
         key: 'getData',
         value: function getData() {
+            // options is used within renderer, so need more data
             var data = get(Checkbox.prototype.__proto__ || Object.getPrototypeOf(Checkbox.prototype), 'getData', this).call(this);
             data.options = this.schema.options; // more data definition
             return data;
@@ -1224,13 +1278,61 @@ var Checkbox = function (_VueControl) {
         value: function getRenderer() {
             return renderer$1;
         }
+    }, {
+        key: 'allowedEvents',
+        value: function allowedEvents() {
+            return ['change'];
+        }
     }]);
     return Checkbox;
 }(VueControl);
 
 Checkbox.type = 'checkbox';
 
-var renderer$2 = VueControl.makeRenderer('\n    <el-input type=\'textarea\' v-model="form.{{name}}"{{props}}></el-input>\n');
+var renderer$2 = VueControl.makeRenderer('\n    <el-radio-group v-model="form.{{name}}" {{props}} {{events}}>\n        {{#each options}}\n            <el-radio\n                label="{{name}}"\n                name="{{../name}}"\n                {{#if disabled}} :disabled=\'true\'{{/if}}\n            >\n            </el-radio>\n        {{/each}}\n    </el-radio-group>\n');
+
+var Radio = function (_VueControl) {
+    inherits(Radio, _VueControl);
+
+    function Radio() {
+        classCallCheck(this, Radio);
+        return possibleConstructorReturn(this, (Radio.__proto__ || Object.getPrototypeOf(Radio)).apply(this, arguments));
+    }
+
+    createClass(Radio, [{
+        key: 'getData',
+        value: function getData() {
+            // options is used within renderer, so need more data
+            var data = get(Radio.prototype.__proto__ || Object.getPrototypeOf(Radio.prototype), 'getData', this).call(this);
+            data.options = this.schema.options; // more data definition
+            return data;
+        }
+    }, {
+        key: 'getRenderer',
+        value: function getRenderer() {
+            return renderer$2;
+        }
+    }, {
+        key: 'allowedProps',
+        value: function allowedProps() {
+            return {
+                size: null,
+                fill: null,
+                textColor: null
+            };
+        }
+    }, {
+        key: 'allowedEvents',
+        value: function allowedEvents() {
+            return ['change'];
+        }
+    }]);
+    return Radio;
+}(VueControl);
+
+Radio.type = 'radio';
+
+var renderer$3 = VueControl.makeRenderer('\n    <el-input type=\'textarea\' v-model="form.{{name}}"{{props}}></el-input>\n');
 
 var Textarea = function (_VueControl) {
     inherits(Textarea, _VueControl);
@@ -1254,7 +1356,12 @@ var Textarea = function (_VueControl) {
     }, {
         key: 'getRenderer',
         value: function getRenderer() {
-            return renderer$2;
+            return renderer$3;
+        }
+    }, {
+        key: 'allowedEvents',
+        value: function allowedEvents() {
+            return ['click', 'blur', 'focus', 'change'];
         }
     }]);
     return Textarea;
@@ -1262,7 +1369,7 @@ var Textarea = function (_VueControl) {
 
 Textarea.type = 'textarea';
 
-var renderer$3 = VueControl.makeRenderer('\n    <el-select v-model="form.{{name}}" {{props}}>\n        <el-option\n            v-for="item in controls.{{name}}.options"\n            :key=\'item.value\'\n            :label="item.label"\n            :value="item.value"\n            :disabled="item.disabled">\n        </el-option>\n    </el-select>\n');
+var renderer$4 = VueControl.makeRenderer('\n    <el-select v-model="form.{{name}}" {{props}} {{events}}>\n        <el-option\n            v-for="item in controls.{{name}}.options"\n            :key=\'item.value\'\n            :label="item.label"\n            :value="item.value"\n            :disabled="item.disabled">\n        </el-option>\n    </el-select>\n');
 
 var Select = function (_VueControl) {
     inherits(Select, _VueControl);
@@ -1282,25 +1389,26 @@ var Select = function (_VueControl) {
             return {
                 placeholder: '请选择',
                 size: null,
-                loading: false,
                 disabled: false,
                 multiple: false, // 可多选
                 filterable: false, // 可搜索
                 remote: false, // 是否远程搜索
-                remoteMethod: null // 远程搜索方法
+                remoteMethod: null, // 远程搜索方法
+                loading: false,
+                loadingText: '加载中',
+                noMatchText: '无匹配数据',
+                noDataText: '无数据'
             };
         }
     }, {
-        key: 'getData',
-        value: function getData() {
-            var data = get(Select.prototype.__proto__ || Object.getPrototypeOf(Select.prototype), 'getData', this).call(this);
-            data.options = this.options; // more data definition
-            return data;
+        key: 'allowedEvents',
+        value: function allowedEvents() {
+            return ['change', 'visibleChange'];
         }
     }, {
         key: 'getRenderer',
         value: function getRenderer() {
-            return renderer$3;
+            return renderer$4;
         }
     }]);
     return Select;
@@ -1311,7 +1419,8 @@ Select.type = 'select';
 /**
  * render form controls
  */
-var controls = [Input, Checkbox, Textarea, Select];
+// all ui controls
+var controls = [Input, Checkbox, Textarea, Select, Radio];
 
 var ElementUI = {
     register: function register(UForm) {

@@ -6,10 +6,11 @@ import UiPlugin from './plugin'
 // all ui controls
 import Input from './controls/Input'
 import Checkbox from './controls/Checkbox'
+import Radio from './controls/Radio'
 import Textarea from './controls/Textarea'
 import Select from './controls/Select'
 
-const controls = [Input, Checkbox, Textarea, Select]
+const controls = [Input, Checkbox, Textarea, Select, Radio]
 
 export default {
     register (UForm) {

@@ -44,15 +44,33 @@
             formOptions: {
                 schema: [
                     {
-                        name: 'schoolName',
-                        type: 'input',
-                        label: '学校名称',
-                        placeholder: 'Please input the school name',
-                        disabled: true
+                        $type: 'input',
+                        name: 'userName',
+                        label: 'User Name',
+                        placeholder: 'Please input your name',
+                        disabled: false,
+                        $events: {
+                            change (name) {
+                                console.log('name changed:' + name)
+                            }
+                        }
                     },
                     {
+                        $type: 'input',
+                        type: 'password',
+                        name: 'pwd',
+                        label: 'Password',
+                        placeholder: 'Please input your pass',
+                        disabled: false,
+                        $events: {
+                            change (name) {
+                                console.log('pass changed:' + name)
+                            }
+                        }
+                    },
+                    {
+                        $type: 'checkbox',
                         name: 'checklist',
-                        type: 'checkbox',
                         label: 'We have',
                         options: [{
                             name: 'Teachers'
@@ -64,16 +82,16 @@
                         }]
                     },
                     {
+                        $type: 'textarea',
                         name: 'description',
-                        type: 'textarea',
                         label: 'About Us',
                         placeholder: 'Something about us ...'
                     },
                     {
+                        $type: 'select',
                         name: 'years',
-                        type: 'select',
                         label: 'Years',
-                        multiple: true,
+                        multiple: false,
                         placeholder: 'Please select a year ...',
                         options: [{
                             label: '2000', value: 2000
@@ -83,11 +101,16 @@
                             label: '2020', value: 2020, disabled: true
                         }, {
                             label: '2030', value: 2030
-                        }]
+                        }],
+                        $events: {
+                            change (year) {
+                                console.log('years changed:' + year)
+                            }
+                        }
                     },
                     {
+                        $type: 'select',
                         name: 'remoteYear',
-                        type: 'select',
                         label: 'Remote Year',
                         placeholder: 'load remote data ...',
                         remote: true,

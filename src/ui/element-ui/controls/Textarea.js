@@ -18,6 +18,10 @@ class Textarea extends VueControl {
     getRenderer () {
         return renderer
     }
+
+    allowedEvents () {
+        return ['click', 'blur', 'focus', 'change']
+    }
 }
 
 Textarea.type = 'textarea'

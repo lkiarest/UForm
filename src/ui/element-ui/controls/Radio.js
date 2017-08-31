@@ -1,19 +1,19 @@
 import VueControl from 'ui/VueControl.js'
 
 const renderer = VueControl.makeRenderer(`
-    <el-checkbox-group v-model="form.{{name}}" {{props}} {{events}}>
+    <el-radio-group v-model="form.{{name}}" {{props}} {{events}}>
         {{#each options}}
-            <el-checkbox
+            <el-radio
                 label="{{name}}"
                 name="{{../name}}"
                 {{#if disabled}} :disabled='true'{{/if}}
             >
-            </el-checkbox>
+            </el-radio>
         {{/each}}
-    </el-checkbox-group>
+    </el-radio-group>
 `)
 
-class Checkbox extends VueControl {
+class Radio extends VueControl {
     getData () { // options is used within renderer, so need more data
         let data = super.getData()
         data.options = this.schema.options // more data definition
@@ -24,11 +24,19 @@ class Checkbox extends VueControl {
         return renderer
     }
 
+    allowedProps () {
+        return {
+            size: null,
+            fill: null,
+            textColor: null
+        }
+    }
+
     allowedEvents () {
         return ['change']
     }
 }
 
-Checkbox.type = 'checkbox'
+Radio.type = 'radio'
 
-export default Checkbox
+export default Radio

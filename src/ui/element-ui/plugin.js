@@ -22,11 +22,6 @@ class UiPlugin {
             form.applyPlugins('after-render-form', container, formBody)
         })
 
-        form.plugin('form-wrapper', function(wrapper) {
-            wrapper.setAttribute('v-model', this.formDataName)
-            return wrapper
-        })
-
         form.plugin('before-render-control', function(rendered, control) {
             const panel = document.createElement('el-form-item')
             const label = control.label
